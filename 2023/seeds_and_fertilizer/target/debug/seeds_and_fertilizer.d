@@ -1,0 +1,1 @@
+/mnt/c/Users/haute/Desktop/personal/advent_of_code/2023/seeds_and_fertilizer/target/debug/seeds_and_fertilizer: /mnt/c/Users/haute/Desktop/personal/advent_of_code/2023/seeds_and_fertilizer/src/main.rs
