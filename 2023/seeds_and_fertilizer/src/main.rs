@@ -92,7 +92,7 @@ fn make_map_from_range(source_start: i64, dest_start: i64, range: i64) -> RangeM
             start: source_start,
             end: source_start + range,
         },
-        offset: source_start - dest_start,
+        offset: dest_start - source_start,
     };
 }
 
@@ -136,7 +136,7 @@ fn parse_seeds(raw_seeds: &str) -> Vec<Range> {
     while i < seeds.len() {
         actual_seeds.push(Range {
             start: seeds[i],
-            end: seeds[i + 1],
+            end: seeds[i] + seeds[i + 1],
         });
         i += 2;
     }
@@ -156,8 +156,6 @@ fn main() {
         dbg!(&seeds);
         dbg!(&map);
         seeds = apply_multiple_maps(map, &seeds);
-        dbg!(&seeds);
-        break;
     }
     for s in seeds {
         lowest_spot = match lowest_spot.cmp(&s.start) {
