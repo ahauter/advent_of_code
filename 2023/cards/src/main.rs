@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::env;
 use std::fmt::format;
@@ -51,6 +52,34 @@ impl Hand {
         };
         return value;
     }
+    fn nth(&self, i: usize) -> char {
+        return self.cards.chars().nth(i).unwrap();
+    }
+}
+
+fn card_rank(card: &char) -> i64 {
+    let card_ordering = vec![
+        '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A',
+    ];
+    let mut card_ordering = card_ordering.iter();
+    return card_ordering.position(|c| c == card).unwrap() as i64;
+}
+
+impl Ord for Hand {
+    fn cmp(&self, other: &Hand) -> Ordering {
+        let mut ord = self.rank().cmp(&other.rank());
+        let mut i = 0;
+        while ord == Ordering::Equal && i < 5 {
+            ord = card_rank(&self.nth(i)).cmp(&card_rank(&other.nth(i)));
+            i += 1;
+        }
+        return ord;
+    }
+}
+impl PartialOrd for Hand {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        return Some(self.cmp(other));
+    }
 }
 
 fn main() {
@@ -64,9 +93,14 @@ fn main() {
     };
     let raw_cards_and_score = fs::read_to_string(file_path)
         .expect(&format(format_args!("Cannot find file {}", file_path)));
-    for l in raw_cards_and_score.lines() {
-        let h = Hand::new(l);
-        dbg!(&h);
-        dbg!(h.rank());
+    let mut cards: Vec<Hand> = raw_cards_and_score
+        .lines()
+        .map(|hand| Hand::new(hand))
+        .collect();
+    cards.sort();
+    let mut score = 0;
+    for (i, hand) in cards.iter().enumerate() {
+        score += (i as i64 + 1) * hand.value;
     }
+    dbg!(score);
 }
