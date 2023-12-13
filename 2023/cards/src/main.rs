@@ -11,6 +11,17 @@ struct Hand {
     value: i64,
 }
 
+#[derive(Eq, Ord, PartialEq, PartialOrd, Debug)]
+enum PokerHands {
+    OneOfAKind = 1,
+    TwoOfAKind = 2,
+    TwoPair = 3,
+    ThreeOfAKind = 4,
+    FullHouse = 5,
+    FourOfAKind = 6,
+    FiveOfAKind = 7,
+}
+
 impl Hand {
     fn new(raw_data: &str) -> Hand {
         let split_data: Vec<&str> = raw_data.split_whitespace().collect();
@@ -20,7 +31,7 @@ impl Hand {
         return Hand { cards, value };
     }
 
-    fn rank(&self) -> i64 {
+    fn rank(&self) -> PokerHands {
         let mut card_map: HashMap<char, i64> = HashMap::new();
         for card in self.cards.chars() {
             let new_value = match card_map.get(&card) {
@@ -29,26 +40,36 @@ impl Hand {
             };
             card_map.insert(card, new_value);
         }
-        let card_count = card_map.values().max().unwrap().clone();
+        let j_value = match card_map.remove(&'J') {
+            Some(n) => n,
+            None => 0,
+        };
+        let card_count = match card_map.values().max() {
+            Some(v) => v + j_value,
+            None => j_value,
+        };
         let value = match card_count {
             2 => {
                 if card_map.values().filter(|x| **x == 2).count() == 2 {
-                    3
+                    PokerHands::TwoPair
                 } else {
-                    2
+                    PokerHands::TwoOfAKind
                 }
             }
             3 => {
-                if card_map.values().filter(|x| **x == 2).count() == 1 {
-                    5
+                if card_map.values().filter(|x| **x == 2).count() as i64 == 1 + j_value {
+                    PokerHands::FullHouse
                 } else {
-                    4
+                    PokerHands::ThreeOfAKind
                 }
             }
-            4 => 6,
-            5 => 7,
-            1 => 1,
-            _ => panic!("This should not be a possible number of cards in a hand!"),
+            4 => PokerHands::FourOfAKind,
+            5 => PokerHands::FiveOfAKind,
+            1 => PokerHands::OneOfAKind,
+            i => panic!(
+                "{} This should not be a possible number of cards in a hand!",
+                i
+            ),
         };
         return value;
     }
@@ -59,7 +80,7 @@ impl Hand {
 
 fn card_rank(card: &char) -> i64 {
     let card_ordering = vec![
-        '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A',
+        'J', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'Q', 'K', 'A',
     ];
     let mut card_ordering = card_ordering.iter();
     return card_ordering.position(|c| c == card).unwrap() as i64;
@@ -103,4 +124,24 @@ fn main() {
         score += (i as i64 + 1) * hand.value;
     }
     dbg!(score);
+}
+
+#[test]
+fn hand_rank() {
+    let file_path = "./src/test3.txt";
+    let raw_cards_and_score = fs::read_to_string(file_path)
+        .expect(&format(format_args!("Cannot find file {}", file_path)));
+    let cards: Vec<Hand> = raw_cards_and_score
+        .lines()
+        .map(|hand| Hand::new(hand))
+        .collect();
+    for card in cards {
+        assert!(
+            card.rank() as i64 == card.value,
+            "Hand {} does not return value {}, instead {}",
+            card.cards,
+            card.value,
+            card.rank() as i64
+        );
+    }
 }
